@@ -10,7 +10,6 @@
 </head>
 
 <body>
-
   <div id="chat">
     <ul></ul>
     <input id="chat-input" placeholder="You can chat with this thing." class="translate" maxlength="512"
@@ -18,11 +17,8 @@
   </div>
 
   <div id="room-notice"></div>
-
   <div id="names"></div>
-
   <div id="piano"></div>
-
   <div id="cursors"></div>
 
   <a href="https://mpp.community/" title="MPPClone Community Forum" target="_blank">
@@ -30,14 +26,15 @@
       <img src="/mppcommunity.ico" style="vertical-align: middle;">
     </button>
   </a>
-  <a href="https://docs.google.com/document/d/1wQvGwQdaI8PuEjSWxKDDThVIoAlCYIxQOyfyi4o6HcM/edit?usp=sharing" title="Multiplayer Piano Rules" target="_blank">
+  <a href="https://docs.google.com/document/d/1wQvGwQdaI8PuEjSWxKDDThVIoAlCYIxQOyfyi4o6HcM/edit?usp=sharing"
+    title="Multiplayer Piano Rules" target="_blank">
     <button class="mpp-rules-button top-button">
       Rules
     </button>
   </a>
 
   <noscript>
-    <center>
+    <div style="text-align:center">
       <p>
         Multiplayer Piano is an online, full 88-key piano you can play alone or with others in real-time. Plug up your
         MIDI keyboard, MIDI in and out are supported. You should be able to hear some seriously talented piano players
@@ -51,7 +48,7 @@
         Of course, first you need to <a href="http://www.enable-javascript.com/" class="link">Enable Javascript</a> or
         it won't do anything...!
       </p>
-    </center>
+    </div>
   </noscript>
 
   <div id="bottom">
@@ -93,32 +90,41 @@
         <p>This site makes a lot of sound! You may want to adjust the volume before continuing.</p>
         <button class="submit">PLAY</button>
       </div>
+
       <div id="new-room" class="dialog">
         <p><input type="text" name="name" placeholder="room name" class="text translate" maxlength="512" /></p>
-        <p><label><input type="checkbox" name="visible" class="checkbox translate" checked>Visible (open to everyone)</label></p>
+        <p><label><input type="checkbox" name="visible" class="checkbox translate" checked>Visible (open to
+            everyone)</label></p>
         <button class="submit">go</button>
       </div>
+
       <div id="room-settings" class="dialog">
         <p>
-        <div class="ugly-button drop-crown">Drop crown</div>
+          <div class="ugly-button drop-crown">Drop crown</div>
         </p>
-        <p><label><input type="checkbox" name="visible" class="checkbox translate" checked>Visible (open to everyone)</label></p>
+        <p><label><input type="checkbox" name="visible" class="checkbox translate" checked>Visible (open to
+            everyone)</label></p>
         <p><label><input type="checkbox" name="chat" class="checkbox translate" checked>Enable Chat</label></p>
         <p><label><input type="checkbox" name="crownsolo" class="checkbox">Only Owner can Play</label></p>
         <p><label><input type="checkbox" name="nocussing" class="checkbox">No Cussing</label></p>
-        <p><label>Inner color: &nbsp;<input type="color" name="color" placeholder="" maxlength="7" class="color"></label></p>
-        <p><label>Outer color: &nbsp;<input type="color" name="color2" placeholder="" maxlength="7" class="color"></label></p>
+        <p><label>Inner color: &nbsp;<input type="color" name="color" placeholder="" maxlength="7"
+              class="color"></label></p>
+        <p><label>Outer color: &nbsp;<input type="color" name="color2" placeholder="" maxlength="7"
+              class="color"></label></p>
         <p><label>Player limit: &nbsp;<input type="text" name="limit" maxlength="2" value="50"></label></p>
         <button class="submit">APPLY</button>
       </div>
+
       <div id="rename" class="dialog">
         <p><input type="text" name="name" placeholder="My Fancy New Name" maxlength="40" class="text" />
           <input type="color" name="color" placeholder="" maxlength="7" class="color" />
         </p>
         <button class="submit">USER SET</button>
       </div>
+
       <div id="siteban" class="dialog">
-        <p><label>User ID: <input type="text" name="id" placeholder="User's ID" maxlength="24" class="text" /></label></p>
+        <p><label>User ID: <input type="text" name="id" placeholder="User's ID" maxlength="24" class="text" /></label>
+        </p>
         <p><label>Reason: <select name="reasonSelect">
               <option value="Discrimination against others">Discrimination</option>
               <option value="Discussion of inappropriate topics">Inappropriate discussion</option>
@@ -133,17 +139,23 @@
               <option value="Abusing bots or scripts">Abusing bots or scripts</option>
               <option value="Promoting violence or illegal activities">Promoting violence/illegal activities</option>
               <option value="Promoting breaking the rules">Promoting breaking the rules</option>
-              <option value="Giving out another user's personal information without their consent">Giving other user's personal information</option>
-              <option value="Sending the same or similar messages throughout multiple rooms">Sending the same message in many rooms</option>
-              <option value="Holding the crown in a room that does not belong to you">Holding the crown in someone else's room</option>
+              <option value="Giving out another user's personal information without their consent">Giving other user's
+                personal information</option>
+              <option value="Sending the same or similar messages throughout multiple rooms">Sending the same message in
+                many rooms</option>
+              <option value="Holding the crown in a room that does not belong to you">Holding the crown in someone
+                else's room</option>
               <option value="Abusing permissions or higher quotas">Abusing permissions/quotas</option>
               <option value="Misleading others through impersonation">Impersonation</option>
-              <option value="Lying about users on the site in a way that negatively affects them">Lying about other users</option>
+              <option value="Lying about users on the site in a way that negatively affects them">Lying about other
+                users</option>
               <option value="custom">Custom...</option>
             </select>
-            <input type="text" name="reasonText" placeholder="Ban reason..." maxlength="512" class="text" style="width: 100%;" /></label>
+            <input type="text" name="reasonText" placeholder="Ban reason..." maxlength="512" class="text"
+              style="width: 100%;" /></label>
           </label></p>
-        <p><label>Duration: <br><input type="number" name="durationNumber" placeholder="Amount of unit..." value="5" class="text" style="width: 60%" />
+        <p><label>Duration: <br><input type="number" name="durationNumber" placeholder="Amount of unit..." value="5"
+              class="text" style="width: 60%" />
             <select name="durationUnit">
               <option value="seconds">Seconds</option>
               <option value="minutes">Minutes</option>
@@ -157,10 +169,12 @@
           </label>
           </label>
         </p>
-        <p><label>Note: <textarea name="note" cols="49" rows="5" maxlength="512" placeholder="Optional note for staff..."></textarea></label></p>
+        <p><label>Note: <textarea name="note" cols="49" rows="5" maxlength="512"
+              placeholder="Optional note for staff..."></textarea></label></p>
         <p name="errorText" style="color:red; font-size: 16px;"></p>
         <button class="submit">BAN</button>
       </div>
+
       <div id="account" class="dialog">
         <p>
           <label>Log in: <div class="ugly-button login-discord">Discord</div></label>
