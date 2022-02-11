@@ -1,4 +1,6 @@
-class Client extends EventEmitter {
+import { EventEmitter } from "./util"
+
+export default class Client extends EventEmitter {
     constructor(uri) {
         if (window.MPP && MPP.client) {
             throw new Error("Running multiple clients in a single tab is not allowed due to abuse. Attempting to bypass this may result in an auto-ban!")
@@ -56,15 +58,7 @@ class Client extends EventEmitter {
         if(!this.canConnect || !this.isSupported() || this.isConnected() || this.isConnecting())
             return;
         this.emit("status", "Connecting...");
-        if(typeof module !== "undefined") {
-            // nodejsicle
-            this.ws = new WebSocket(this.uri, {
-                origin: "https://www.multiplayerpiano.com"
-            });
-        } else {
-            // browseroni
-            this.ws = new WebSocket(this.uri);
-        }
+        this.ws = new WebSocket(this.uri);
         var self = this;
         this.ws.addEventListener("close", function(evt) {
             self.user = undefined;
@@ -366,5 +360,3 @@ class Client extends EventEmitter {
       this.loginInfo = loginInfo;
     };
 };
-
-this.Client = Client;
