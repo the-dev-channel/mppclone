@@ -2,7 +2,7 @@ import $ from "jquery";
 import lamejs from "lamejs";
 
 import Color from "./Color";
-import Client from "./client";
+import Client from "./Client";
 import NoteQuota from "./NoteQuota";
 import SoundSelector from "./sounds";
 import translate from "./translation";
