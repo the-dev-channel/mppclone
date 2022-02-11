@@ -168,6 +168,7 @@ Contains information about a channel.
 
 #### Properties
 
+- `?"banned"`: Whether the client user is currently banned from this channel. If this property is not present, the user is not banned.
 - `"count"`: The number of users currently in the channel.
 - `"id"`: The name of this channel.
 - `"_id"`: The name of this channel. Identical to `"id"`.
