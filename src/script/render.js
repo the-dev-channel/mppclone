@@ -96,6 +96,8 @@ export class CanvasRenderer extends Renderer {
   }
 
   resize(width, height) {
+    let ctx;
+
     super.resize(width, height);
     if (this.width < 52 * 2) this.width = 52 * 2;
     if (this.height < this.width * 0.2)
@@ -137,7 +139,7 @@ export class CanvasRenderer extends Renderer {
     this.whiteKeyRender = document.createElement("canvas");
     this.whiteKeyRender.width = this.whiteKeyWidth;
     this.whiteKeyRender.height = this.height + 10;
-    let ctx = this.whiteKeyRender.getContext("2d");
+    ctx = this.whiteKeyRender.getContext("2d");
     if (ctx.createLinearGradient) {
       let gradient = ctx.createLinearGradient(0, 0, 0, this.whiteKeyHeight);
       gradient.addColorStop(0, "#eee");
@@ -169,7 +171,7 @@ export class CanvasRenderer extends Renderer {
     this.blackKeyRender = document.createElement("canvas");
     this.blackKeyRender.width = this.blackKeyWidth + 10;
     this.blackKeyRender.height = this.blackKeyHeight + 10;
-    let ctx = this.blackKeyRender.getContext("2d");
+    ctx = this.blackKeyRender.getContext("2d");
     if (ctx.createLinearGradient) {
       let gradient = ctx.createLinearGradient(0, 0, 0, this.blackKeyHeight);
       gradient.addColorStop(0, "#000");

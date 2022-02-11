@@ -118,7 +118,7 @@ export default class SoundSelector {
       this.piano.renderer.resize();
     }
 
-    for (let key of this.piano.keys) {
+    for (let key of Object.values(this.piano.keys)) {
       key.loaded = false;
       this.piano.audio.load(key.note, pack.url + key.note + pack.ext, () => {
         key.loaded = true;

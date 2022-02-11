@@ -80,7 +80,7 @@ export class AudioEngineWeb extends AudioEngine {
     req.addEventListener("readystatechange", (evt) => {
       if (req.readyState !== 4) return;
       try {
-        this.context.decodeAudioData(req.response, function (buffer) {
+        this.context.decodeAudioData(req.response, buffer => {
           this.sounds[id] = buffer;
           if (cb) cb();
         });

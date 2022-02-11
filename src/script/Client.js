@@ -97,17 +97,17 @@ export default class Client extends EventEmitter {
       let ms = ms_lut[idx];
       setTimeout(this.connect.bind(this), ms);
     });
-    this.ws.addEventListener("error", function (err) {
+    this.ws.addEventListener("error", err => {
       this.emit("wserror", err);
       this.ws.close(); // this.ws.emit("close");
     });
-    this.ws.addEventListener("open", function (evt) {
-      this.pingInterval = setInterval(function () {
+    this.ws.addEventListener("open", evt => {
+      this.pingInterval = setInterval(() => {
         this.sendPing();
       }, 20000);
       this.noteBuffer = [];
       this.noteBufferTime = 0;
-      this.noteFlushInterval = setInterval(function () {
+      this.noteFlushInterval = setInterval(() => {
         if (this.noteBufferTime && this.noteBuffer.length > 0) {
           this.sendArray([
             {
@@ -124,7 +124,7 @@ export default class Client extends EventEmitter {
       this.emit("connect");
       this.emit("status", "Joining channel...");
     });
-    this.ws.addEventListener("message", async function (evt) {
+    this.ws.addEventListener("message", async evt => {
       let transmission = JSON.parse(evt.data);
       for (let i = 0; i < transmission.length; i++) {
         let msg = transmission[i];
@@ -153,29 +153,29 @@ export default class Client extends EventEmitter {
         this.accountInfo = undefined;
       }
     });
-    this.on("t", function (msg) {
+    this.on("t", msg => {
       this.receiveServerTime(msg.t, msg.e || undefined);
     });
-    this.on("ch", function (msg) {
+    this.on("ch", msg => {
       this.desiredChannelId = msg.ch._id;
       this.desiredChannelSettings = msg.ch.settings;
       this.channel = msg.ch;
       if (msg.p) this.participantId = msg.p;
       this.setParticipants(msg.ppl);
     });
-    this.on("p", function (msg) {
+    this.on("p", msg => {
       this.participantUpdate(msg);
       this.emit("participant update", this.findParticipantById(msg.id));
     });
-    this.on("m", function (msg) {
+    this.on("m", msg => {
       if (this.ppl.hasOwnProperty(msg.id)) {
         this.participantMoveMouse(msg);
       }
     });
-    this.on("bye", function (msg) {
+    this.on("bye", msg => {
       this.removeParticipant(msg.p);
     });
-    this.on("b", function (msg) {
+    this.on("b", msg => {
       let hiMsg = { m: "hi" };
       hiMsg["🐈"] = this["🐈"]++ || undefined;
       if (this.loginInfo) hiMsg.login = this.loginInfo;
@@ -358,7 +358,7 @@ export default class Client extends EventEmitter {
   startNote(note, vel) {
     if (typeof note !== "string") return;
     if (this.isConnected()) {
-      let vel = typeof vel === "undefined" ? undefined : +vel.toFixed(3);
+      vel = typeof vel === "undefined" ? undefined : +vel.toFixed(3);
       if (!this.noteBufferTime) {
         this.noteBufferTime = Date.now();
         this.noteBuffer.push({ n: note, v: vel });

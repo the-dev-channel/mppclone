@@ -255,7 +255,7 @@ export class Notification extends EventEmitter {
   constructor(par) {
     super();
 
-    let par = par || {};
+    par = par || {};
 
     this.id = "Notification-" + (par.id || Math.random());
     this.title = par.title || "";
