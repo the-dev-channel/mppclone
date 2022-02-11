@@ -1,7 +1,6 @@
 {
   "name": "mppclone",
   "version": "1.0.0",
-  "main": "index.js",
   "repository": "https://github.com/dexterfoxy/mppclone.git",
   "author": "dexterfoxy <jadefoxboi@outlook.com>",
   "license": "GPL-3.0-only",
