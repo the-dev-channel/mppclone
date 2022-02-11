@@ -1997,7 +1997,8 @@ $(function () {
 
         if (isSpecialDm) {
           if (gShowIdsInChat) li.append('<span class="id"/>');
-          li.append('<span class="name"/><span class="dmArrow"/>');
+          li.append('<span class="name"/>');
+          li.append('<span class="dmArrow"/>');
           if (gShowIdsInChat) li.append('<span class="id2"/>');
           li.append('<span class="name2"/>');
           li.append('<span class="message"/>');
