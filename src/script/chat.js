@@ -70,7 +70,7 @@ export default class ChatFacade {
             }
             setTimeout(() => this.blur(), 100);
           } else {
-            chat.send(message);
+            this.send(message);
             evt.target.value = "";
             setTimeout(() => this.blur(), 100);
           }
