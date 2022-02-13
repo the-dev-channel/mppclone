@@ -21,7 +21,6 @@ import {
   VP_LAYOUT,
   MIDI_TRANSPOSE,
   MIDI_KEY_NAMES,
-  URL_REGEX,
 } from "./constants";
 
 //module.hot && module.hot.accept();
