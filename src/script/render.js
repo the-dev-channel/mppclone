@@ -12,8 +12,9 @@ export class Renderer {
   }
 
   resize(width, height) {
-    if (typeof width == "undefined") width = $(this.piano.rootElement).width();
-    if (typeof height == "undefined") height = Math.floor(width * 0.2);
+    width ||= $(this.piano.rootElement).width();
+    height ||= Math.floor(width * 0.2);
+
     $(this.piano.rootElement).css({
       height: height + "px",
       marginTop: Math.floor($(window).height() / 2 - height / 2) + "px",
@@ -269,7 +270,7 @@ export class CanvasRenderer extends Renderer {
 
   visualize(key, color) {
     key.timePlayed = Date.now();
-    key.blips.push({ time: key.timePlayed, color: color });
+    key.blips.push({ time: key.timePlayed, color });
   }
 
   redraw() {
@@ -420,20 +421,23 @@ export class CanvasRenderer extends Renderer {
 
   getHit(x, y) {
     for (let j = 0; j < 2; j++) {
-      let sharp = j ? false : true; // black keys first
+      let sharp = !j; // black keys first
+
       for (let i in this.piano.keys) {
         if (!this.piano.keys.hasOwnProperty(i)) continue;
         let key = this.piano.keys[i];
         if (key.sharp != sharp) continue;
+
         if (key.rect.contains(x, y)) {
           let v = y / (key.sharp ? this.blackKeyHeight : this.whiteKeyHeight);
           v += 0.25;
           v *= DEFAULT_VELOCITY;
           if (v > 1.0) v = 1.0;
-          return { key: key, v: v };
+          return { key, v };
         }
       }
     }
+
     return null;
   }
 
@@ -446,11 +450,12 @@ export class CanvasRenderer extends Renderer {
     let element = evt.target;
     let offx = 0;
     let offy = 0;
+
     do {
-      if (!element) break; // wtf, wtf?
       offx += element.offsetLeft;
       offy += element.offsetTop;
     } while ((element = element.offsetParent));
+
     return {
       x: (evt.pageX - offx) * window.devicePixelRatio,
       y: (evt.pageY - offy) * window.devicePixelRatio,

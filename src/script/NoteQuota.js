@@ -4,6 +4,7 @@ class NoteQuota {
     this.setParams();
     this.resetPoints();
   }
+
   getParams() {
     return {
       m: "nq",
@@ -12,15 +13,19 @@ class NoteQuota {
       maxHistLen: this.maxHistLen,
     };
   }
+
   setParams(params) {
-    params = params || NoteQuota.PARAMS_OFFLINE;
-    var allowance =
+    params ||= NoteQuota.PARAMS_OFFLINE;
+
+    let allowance =
       params.allowance || this.allowance || NoteQuota.PARAMS_OFFLINE.allowance;
-    var max = params.max || this.max || NoteQuota.PARAMS_OFFLINE.max;
-    var maxHistLen =
+
+    let max = params.max || this.max || NoteQuota.PARAMS_OFFLINE.max;
+    let maxHistLen =
       params.maxHistLen ||
       this.maxHistLen ||
       NoteQuota.PARAMS_OFFLINE.maxHistLen;
+
     if (
       allowance !== this.allowance ||
       max !== this.max ||
@@ -34,12 +39,14 @@ class NoteQuota {
     }
     return false;
   }
+
   resetPoints() {
     this.points = this.max;
     this.history = [];
     for (var i = 0; i < this.maxHistLen; i++) this.history.unshift(this.points);
     if (this.cb) this.cb(this.points);
   }
+
   tick() {
     // keep a brief history
     this.history.unshift(this.points);
@@ -52,13 +59,16 @@ class NoteQuota {
       if (this.cb) this.cb(this.points);
     }
   }
+
   spend(needed) {
     // check whether aggressive limitation is needed
-    var sum = 0;
-    for (var i in this.history) {
-      sum += this.history[i];
+    let sum = 0;
+    for (let n of this.history) {
+      sum += n;
     }
+
     if (sum <= 0) needed *= this.allowance;
+
     // can they afford it?  spend
     if (this.points < needed) {
       return false;

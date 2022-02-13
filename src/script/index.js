@@ -1,6 +1,10 @@
+// 钢琴
+
 import $ from "jquery";
 import lamejs from "lamejs";
+import assign from "object-assign";
 
+import Chat from "./chat";
 import Color from "./Color";
 import Client from "./Client";
 import NoteQuota from "./NoteQuota";
@@ -8,18 +12,22 @@ import SoundSelector from "./sounds";
 import translate from "./translation";
 
 import { Piano } from "./piano";
-import { Notification, mixin } from "./util";
+import { Notification, Knob } from "./util";
 import {
   BASIC_PIANO_SCALES,
   DEFAULT_VELOCITY,
   TIMING_TARGET,
   MPP_LAYOUT,
   VP_LAYOUT,
+  MIDI_TRANSPOSE,
+  MIDI_KEY_NAMES,
+  URL_REGEX,
 } from "./constants";
 
 //module.hot && module.hot.accept();
 
-// 钢琴
+// Globally used values (nullable)
+let chat;
 
 $(function () {
   console.log(
@@ -105,7 +113,7 @@ $(function () {
   function release(id) {
     if (gHeldNotes[id]) {
       gHeldNotes[id] = false;
-      if ((gAutoSustain || gSustain) && !enableSynth) {
+      if ((gAutoSustain || gSustain) && !gPiano.synth.enable) {
         gSustainedNotes[id] = true;
       } else {
         if (gNoteQuota.spend(1)) {
@@ -526,7 +534,7 @@ $(function () {
         else if (vel < 0) vel = 0;
         else if (vel > 1) vel = 1;
         gPiano.play(note.n, vel, participant, ms);
-        if (enableSynth) {
+        if (gPiano.audio.synth.enable) {
           gPiano.stop(note.n, participant, ms + 1000);
         }
       }
@@ -974,7 +982,9 @@ $(function () {
 
   var capturingKeyboard = false;
 
-  function captureKeyboard() {
+  // TODO: Move into module
+
+  window.captureKeyboard = function captureKeyboard() {
     if (!capturingKeyboard) {
       capturingKeyboard = true;
       $("#piano").off("mousedown", recapListener);
@@ -983,9 +993,9 @@ $(function () {
       $(document).on("keyup", handleKeyUp);
       $(window).on("keypress", handleKeyPress);
     }
-  }
+  };
 
-  function releaseKeyboard() {
+  window.releaseKeyboard = function releaseKeyboard() {
     if (capturingKeyboard) {
       capturingKeyboard = false;
       $(document).off("keydown", handleKeyDown);
@@ -994,7 +1004,7 @@ $(function () {
       $("#piano").on("mousedown", recapListener);
       $("#piano").on("touchstart", recapListener);
     }
-  }
+  };
 
   captureKeyboard();
 
@@ -1028,9 +1038,10 @@ $(function () {
     gNoteQuota.setParams(NoteQuota.PARAMS_OFFLINE);
   });
 
+  // TODO: Move to module
   //DMs
-  var gDmParticipant;
-  var gIsDming = false;
+  window.gDmParticipant = null;
+  window.gIsDming = false;
   var gKnowsHowToDm = localStorage.knowsHowToDm === "true";
   gClient.on("participant removed", (part) => {
     if (gIsDming && part._id === gDmParticipant._id) {
@@ -1774,385 +1785,11 @@ $(function () {
 
   ////////////////////////////////////////////////////////////////
 
-  var chat = (function () {
-    var url_regex = new RegExp(
-      // protocol identifier (optional)
-      // short syntax // still required
-      "(?:(?:(?:https?|ftp):)?\\/\\/)" +
-        // user:pass BasicAuth (optional)
-        "(?:\\S+(?::\\S*)?@)?" +
-        "(?:" +
-        // IP address exclusion
-        // private & local networks
-        "(?!(?:10|127)(?:\\.\\d{1,3}){3})" +
-        "(?!(?:169\\.254|192\\.168)(?:\\.\\d{1,3}){2})" +
-        "(?!172\\.(?:1[6-9]|2\\d|3[0-1])(?:\\.\\d{1,3}){2})" +
-        // IP address dotted notation octets
-        // excludes loopback network 0.0.0.0
-        // excludes reserved space >= 224.0.0.0
-        // excludes network & broadcast addresses
-        // (first & last IP address of each class)
-        "(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])" +
-        "(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}" +
-        "(?:\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))" +
-        "|" +
-        // host & domain names, may end with dot
-        // can be replaced by a shortest alternative
-        // (?![-_])(?:[-\\w\\u00a1-\\uffff]{0,63}[^-_]\\.)+
-        "(?:" +
-        "(?:" +
-        "[a-z0-9\\u00a1-\\uffff]" +
-        "[a-z0-9\\u00a1-\\uffff_-]{0,62}" +
-        ")?" +
-        "[a-z0-9\\u00a1-\\uffff]\\." +
-        ")+" +
-        // TLD identifier name, may end with dot
-        "(?:[a-z\\u00a1-\\uffff]{2,}\\.?)" +
-        ")" +
-        // port number (optional)
-        "(?::\\d{2,5})?" +
-        // resource path (optional)
-        "(?:[/?#]\\S*)?",
-      "i"
-    );
-
-    gClient.on("ch", function (msg) {
-      if (msg.ch.settings.chat) {
-        chat.show();
-      } else {
-        chat.hide();
-      }
-    });
-    gClient.on("disconnect", function (msg) {});
-    gClient.on("c", function (msg) {
-      chat.clear();
-      if (msg.c) {
-        for (var i = 0; i < msg.c.length; i++) {
-          chat.receive(msg.c[i]);
-        }
-      }
-    });
-    gClient.on("a", function (msg) {
-      chat.receive(msg);
-    });
-    gClient.on("dm", function (msg) {
-      chat.receive(msg);
-    });
-
-    $("#chat input").on("focus", function (evt) {
-      releaseKeyboard();
-      $("#chat").addClass("chatting");
-      chat.scrollToBottom();
-    });
-    /*$("#chat input").on("blur", function(evt) {
-      captureKeyboard();
-      $("#chat").removeClass("chatting");
-      chat.scrollToBottom();
-    });*/
-    $(document).mousedown(function (evt) {
-      if (!$("#chat").has(evt.target).length > 0) {
-        chat.blur();
-      }
-    });
-    document.addEventListener("touchstart", function (event) {
-      for (var i in event.changedTouches) {
-        var touch = event.changedTouches[i];
-        if (!$("#chat").has(touch.target).length > 0) {
-          chat.blur();
-        }
-      }
-    });
-    $(document).on("keydown", function (evt) {
-      if ($("#chat").hasClass("chatting")) {
-        if (evt.keyCode == 27) {
-          chat.blur();
-          evt.preventDefault();
-          evt.stopPropagation();
-        } else if (evt.keyCode == 13) {
-          $("#chat input").focus();
-        }
-      } else if (!gModal && (evt.keyCode == 27 || evt.keyCode == 13)) {
-        $("#chat input").focus();
-      }
-    });
-    $("#chat input").on("keydown", function (evt) {
-      if (evt.keyCode == 13) {
-        if (MPP.client.isConnected()) {
-          var message = $(this).val();
-          if (message.length == 0) {
-            if (gIsDming) {
-              gIsDming = false;
-              $("#chat-input")[0].placeholder = "You can chat with this thing.";
-            }
-            setTimeout(function () {
-              chat.blur();
-            }, 100);
-          } else {
-            chat.send(message);
-            $(this).val("");
-            setTimeout(function () {
-              chat.blur();
-            }, 100);
-          }
-        }
-        evt.preventDefault();
-        evt.stopPropagation();
-      } else if (evt.keyCode == 27) {
-        chat.blur();
-        evt.preventDefault();
-        evt.stopPropagation();
-      } else if (evt.keyCode == 9) {
-        evt.preventDefault();
-        evt.stopPropagation();
-      }
-    });
-
-    // Optionally show a warning when clicking links
-    /*$("#chat ul").on("click", ".chatLink", function(ev) {
-      var $s = $(this);
-
-      if(gWarnOnLinks) {
-        if(!$s.hasClass("clickedOnce")) {
-          $s.addClass("clickedOnce");
-          var id = setTimeout(() => $s.removeClass("clickedOnce"), 2000);
-          $s.data("clickTimeout", id)
-          return false;
-        } else {
-          console.log("a")
-          $s.removeClass("clickedOnce");
-          var id = $s.data("clickTimeout")
-          if(id !== void 0) {
-            clearTimeout(id)
-            $s.removeData("clickTimeout")
-          }
-        }
-      }
-    });*/
-
-    return {
-      show: function () {
-        $("#chat").fadeIn();
-      },
-
-      hide: function () {
-        $("#chat").fadeOut();
-      },
-
-      clear: function () {
-        $("#chat li").remove();
-      },
-
-      scrollToBottom: function () {
-        var ele = $("#chat ul").get(0);
-        ele.scrollTop = ele.scrollHeight - ele.clientHeight;
-      },
-
-      blur: function () {
-        if ($("#chat").hasClass("chatting")) {
-          $("#chat input").get(0).blur();
-          $("#chat").removeClass("chatting");
-          chat.scrollToBottom();
-          captureKeyboard();
-        }
-      },
-
-      send: function (message) {
-        if (gIsDming) {
-          gClient.sendArray([
-            { m: "dm", _id: gDmParticipant._id, message: message },
-          ]);
-        } else {
-          gClient.sendArray([{ m: "a", message: message }]);
-        }
-      },
-
-      receive: function (msg) {
-        if (msg.m === "dm") {
-          if (gChatMutes.indexOf(msg.sender._id) != -1) return;
-        } else {
-          if (gChatMutes.indexOf(msg.p._id) != -1) return;
-        }
-
-        //construct string for creating list element
-
-        var li = $("<li>");
-
-        var isSpecialDm = false;
-
-        if (gShowTimestampsInChat) li.append('<span class="timestamp"/>');
-
-        if (msg.m === "dm") {
-          if (msg.sender._id === gClient.user._id) {
-            //sent dm
-            li.append('<span class="sentDm"/>');
-          } else if (msg.recipient._id === gClient.user._id) {
-            //received dm
-            li.append('<span class="receivedDm"/>');
-          } else {
-            //someone else's dm
-            li.append('<span class="otherDm"/>');
-            isSpecialDm = true;
-          }
-        }
-
-        if (isSpecialDm) {
-          if (gShowIdsInChat) li.append('<span class="id"/>');
-          li.append('<span class="name"/>');
-          li.append('<span class="dmArrow"/>');
-          if (gShowIdsInChat) li.append('<span class="id2"/>');
-          li.append('<span class="name2"/>');
-          li.append('<span class="message"/>');
-        } else {
-          if (gShowIdsInChat) li.append('<span class="id"/>');
-          li.append('<span class="name"/>');
-          li.append('<span class="message"/>');
-        }
-
-        //prefix before dms so people know it's a dm
-        if (msg.m === "dm") {
-          if (msg.sender._id === gClient.user._id) {
-            //sent dm
-            li.find(".sentDm").text("To");
-            li.find(".sentDm").css("color", "#ff55ff");
-          } else if (msg.recipient._id === gClient.user._id) {
-            //received dm
-            li.find(".receivedDm").text("From");
-            li.find(".receivedDm").css("color", "#ff55ff");
-          } else {
-            //someone else's dm
-            li.find(".otherDm").text("DM");
-            li.find(".otherDm").css("color", "#ff55ff");
-
-            li.find(".dmArrow").text("->");
-            li.find(".dmArrow").css("color", "#ff55ff");
-          }
-        }
-
-        if (gShowTimestampsInChat) {
-          li.find(".timestamp").text(new Date(msg.t).toLocaleTimeString());
-        }
-
-        var message = $("<div>")
-          .text(msg.a)
-          .html()
-          .replace(/@([\da-f]{24})/g, (match, id) => {
-            var user = gClient.ppl[id];
-            if (user) {
-              var nick = $("<div>").text(user.name).html();
-              if (user.id === gClient.getOwnParticipant().id) {
-                if (!tabIsActive) {
-                  youreMentioned = true;
-                  document.title = "You were mentioned!";
-                }
-                return `<span class="mention" style="background-color: ${user.color};">${nick}</span>`;
-              } else return "@" + nick;
-            } else return match;
-          });
-
-        // link formatting
-        message = message.replace(url_regex, (match) => {
-          var safe = $("<div>").text(match).html();
-          return `<a rel="noreferer noopener" target="_blank" class="chatLink" href="${safe}">${safe}</a>`;
-        });
-
-        //apply names, colors, ids
-        li.find(".message").html(message);
-        if (msg.m === "dm") {
-          if (!gNoChatColors)
-            li.find(".message").css("color", msg.sender.color || "white");
-          if (gShowIdsInChat) {
-            if (msg.sender._id === gClient.user._id) {
-              li.find(".id").text(msg.recipient._id.substring(0, 6));
-            } else {
-              li.find(".id").text(msg.sender._id.substring(0, 6));
-            }
-          }
-
-          if (msg.sender._id === gClient.user._id) {
-            //sent dm
-            if (!gNoChatColors)
-              li.find(".name").css("color", msg.recipient.color || "white");
-            li.find(".name").text(msg.recipient.name + ":");
-            if (gShowChatTooltips) li[0].title = msg.recipient._id;
-          } else if (msg.recipient._id === gClient.user._id) {
-            //received dm
-            if (!gNoChatColors)
-              li.find(".name").css("color", msg.sender.color || "white");
-            li.find(".name").text(msg.sender.name + ":");
-
-            if (gShowChatTooltips) li[0].title = msg.sender._id;
-          } else {
-            //someone else's dm
-            if (!gNoChatColors)
-              li.find(".name").css("color", msg.sender.color || "white");
-            if (!gNoChatColors)
-              li.find(".name2").css("color", msg.recipient.color || "white");
-            li.find(".name").text(msg.sender.name);
-            li.find(".name2").text(msg.recipient.name + ":");
-
-            if (gShowIdsInChat)
-              li.find(".id").text(msg.sender._id.substring(0, 6));
-            if (gShowIdsInChat)
-              li.find(".id2").text(msg.recipient._id.substring(0, 6));
-
-            if (gShowChatTooltips) li[0].title = msg.sender._id;
-          }
-        } else {
-          if (!gNoChatColors)
-            li.find(".message").css("color", msg.p.color || "white");
-          if (!gNoChatColors)
-            li.find(".name").css("color", msg.p.color || "white");
-
-          li.find(".name").text(msg.p.name + ":");
-
-          if (!gNoChatColors)
-            li.find(".message").css("color", msg.p.color || "white");
-          if (gShowIdsInChat) li.find(".id").text(msg.p._id.substring(0, 6));
-
-          if (gShowChatTooltips) li[0].title = msg.p._id;
-        }
-
-        //put list element in chat
-
-        $("#chat ul").append(li);
-
-        var eles = $("#chat ul li").get();
-        for (var i = 1; i <= 50 && i <= eles.length; i++) {
-          eles[eles.length - i].style.opacity = 1.0 - i * 0.03;
-        }
-        if (eles.length > 50) {
-          eles[0].style.display = "none";
-        }
-        if (eles.length > 256) {
-          $(eles[0]).remove();
-        }
-
-        // scroll to bottom if not "chatting" or if not scrolled up
-        if (!$("#chat").hasClass("chatting")) {
-          chat.scrollToBottom();
-        } else {
-          var ele = $("#chat ul").get(0);
-          if (ele.scrollTop > ele.scrollHeight - ele.offsetHeight - 50)
-            chat.scrollToBottom();
-        }
-      },
-    };
-  })();
+  chat = new Chat(gClient);
 
   // MIDI
 
-  ////////////////////////////////////////////////////////////////
-
-  var MIDI_TRANSPOSE = -12;
-  var MIDI_KEY_NAMES = ["a-1", "as-1", "b-1"];
-  var bare_notes = "c cs d ds e f fs g gs a as b".split(" ");
-  for (var oct = 0; oct < 7; oct++) {
-    for (var i in bare_notes) {
-      MIDI_KEY_NAMES.push(bare_notes[i] + oct);
-    }
-  }
-  MIDI_KEY_NAMES.push("c7");
-
+  ///////////////////////////////////////////////////////////////
   var devices_json = "[]";
   function sendDevices() {
     gClient.sendArray([{ m: "devices", list: JSON.parse(devices_json) }]);
@@ -2313,7 +1950,8 @@ $(function () {
                 }
                 //console.log("output", output);
               }
-              gMidiOutTest = function (
+
+              gPiano.midiOutTest = function (
                 note_name,
                 vel,
                 delay_ms,
@@ -2392,7 +2030,7 @@ $(function () {
                 });
                 if (gMidiVolumeTest) {
                   var knob = document.createElement("canvas");
-                  mixin(knob, {
+                  assign(knob, {
                     width: 16 * window.devicePixelRatio,
                     height: 16 * window.devicePixelRatio,
                     className: "knob",
@@ -2445,7 +2083,7 @@ $(function () {
                 });
                 if (gMidiVolumeTest) {
                   var knob = document.createElement("canvas");
-                  mixin(knob, {
+                  assign(knob, {
                     width: 16 * window.devicePixelRatio,
                     height: 16 * window.devicePixelRatio,
                     className: "knob",
@@ -2641,48 +2279,11 @@ $(function () {
   // synth
 
   // TODO: Move into module
-  window.enableSynth = false;
-  var audio = gPiano.audio;
-  var context = gPiano.audio.context;
-  var synth_gain = context.createGain();
-  synth_gain.gain.value = 0.05;
-  synth_gain.connect(audio.synthGain);
+  let audio = gPiano.audio;
+  let synth = audio.synth;
 
   var osc_types = ["sine", "square", "sawtooth", "triangle"];
   var osc_type_index = 1;
-
-  var osc1_type = "square";
-  var osc1_attack = 0;
-  var osc1_decay = 0.2;
-  var osc1_sustain = 0.5;
-  var osc1_release = 2.0;
-
-  class SynthVoice {
-    constructor(note_name, time) {
-      var note_number = MIDI_KEY_NAMES.indexOf(note_name);
-      note_number = note_number + 9 - MIDI_TRANSPOSE;
-      var freq = Math.pow(2, (note_number - 69) / 12) * 440.0;
-      this.osc = context.createOscillator();
-      this.osc.type = osc1_type;
-      this.osc.frequency.value = freq;
-      this.gain = context.createGain();
-      this.gain.gain.value = 0;
-      this.osc.connect(this.gain);
-      this.gain.connect(synth_gain);
-      this.osc.start(time);
-      this.gain.gain.setValueAtTime(0, time);
-      this.gain.gain.linearRampToValueAtTime(1, time + osc1_attack);
-      this.gain.gain.linearRampToValueAtTime(
-        osc1_sustain,
-        time + osc1_attack + osc1_decay
-      );
-    }
-    stop(time) {
-      //this.gain.gain.setValueAtTime(osc1_sustain, time);
-      this.gain.gain.linearRampToValueAtTime(0, time + osc1_release);
-      this.osc.stop(time + osc1_release);
-    }
-  }
 
   (function () {
     var button = document.getElementById("synth-btn");
@@ -2702,15 +2303,15 @@ $(function () {
       // on/off button
       (function () {
         var button = document.createElement("input");
-        mixin(button, {
+        assign(button, {
           type: "button",
           value: "ON/OFF",
-          className: enableSynth ? "switched-on" : "switched-off",
+          className: synth.enable ? "switched-on" : "switched-off",
         });
         button.addEventListener("click", function (evt) {
-          enableSynth = !enableSynth;
-          button.className = enableSynth ? "switched-on" : "switched-off";
-          if (!enableSynth) {
+          synth.enable = !synth.enable;
+          button.className = synth.enable ? "switched-on" : "switched-off";
+          if (!synth.enable) {
             // stop all
             for (var i in audio.playings) {
               if (!audio.playings.hasOwnProperty(i)) continue;
@@ -2727,7 +2328,7 @@ $(function () {
 
       // mix
       var knob = document.createElement("canvas");
-      mixin(knob, {
+      assign(knob, {
         width: 32 * window.devicePixelRatio,
         height: 32 * window.devicePixelRatio,
         className: "knob",
@@ -2745,77 +2346,93 @@ $(function () {
 
       // osc1 type
       (function () {
-        osc1_type = osc_types[osc_type_index];
+        synth.osc1.type = osc_types[osc_type_index];
         var button = document.createElement("input");
-        mixin(button, { type: "button", value: osc_types[osc_type_index] });
+        assign(button, { type: "button", value: osc_types[osc_type_index] });
         button.addEventListener("click", function (evt) {
           if (++osc_type_index >= osc_types.length) osc_type_index = 0;
-          osc1_type = osc_types[osc_type_index];
-          button.value = osc1_type;
+          synth.osc1.type = osc_types[osc_type_index];
+          button.value = synth.osc1.type;
         });
         html.appendChild(button);
       })();
 
       // osc1 attack
       var knob = document.createElement("canvas");
-      mixin(knob, {
+      assign(knob, {
         width: 32 * window.devicePixelRatio,
         height: 32 * window.devicePixelRatio,
         className: "knob",
       });
       html.appendChild(knob);
-      knob = new Knob(knob, 0, 1, 0.001, osc1_attack, "osc1 attack", "s");
+      knob = new Knob(knob, 0, 1, 0.001, synth.osc1.attack, "osc1 attack", "s");
       knob.canvas.style.width = "32px";
       knob.canvas.style.height = "32px";
       knob.on("change", function (k) {
-        osc1_attack = k.value;
+        synth.osc1.attack = k.value;
       });
       knob.emit("change", knob);
 
       // osc1 decay
       var knob = document.createElement("canvas");
-      mixin(knob, {
+      assign(knob, {
         width: 32 * window.devicePixelRatio,
         height: 32 * window.devicePixelRatio,
         className: "knob",
       });
       html.appendChild(knob);
-      knob = new Knob(knob, 0, 2, 0.001, osc1_decay, "osc1 decay", "s");
+      knob = new Knob(knob, 0, 2, 0.001, synth.osc1.decay, "osc1 decay", "s");
       knob.canvas.style.width = "32px";
       knob.canvas.style.height = "32px";
       knob.on("change", function (k) {
-        osc1_decay = k.value;
+        synth.osc1.decay = k.value;
       });
       knob.emit("change", knob);
 
       var knob = document.createElement("canvas");
-      mixin(knob, {
+      assign(knob, {
         width: 32 * window.devicePixelRatio,
         height: 32 * window.devicePixelRatio,
         className: "knob",
       });
       html.appendChild(knob);
-      knob = new Knob(knob, 0, 1, 0.001, osc1_sustain, "osc1 sustain", "x");
+      knob = new Knob(
+        knob,
+        0,
+        1,
+        0.001,
+        synth.osc1.sustain,
+        "osc1 sustain",
+        "x"
+      );
       knob.canvas.style.width = "32px";
       knob.canvas.style.height = "32px";
       knob.on("change", function (k) {
-        osc1_sustain = k.value;
+        synth.osc1.sustain = k.value;
       });
       knob.emit("change", knob);
 
       // osc1 release
       var knob = document.createElement("canvas");
-      mixin(knob, {
+      assign(knob, {
         width: 32 * window.devicePixelRatio,
         height: 32 * window.devicePixelRatio,
         className: "knob",
       });
       html.appendChild(knob);
-      knob = new Knob(knob, 0, 2, 0.001, osc1_release, "osc1 release", "s");
+      knob = new Knob(
+        knob,
+        0,
+        2,
+        0.001,
+        synth.osc1.release,
+        "osc1 release",
+        "s"
+      );
       knob.canvas.style.width = "32px";
       knob.canvas.style.height = "32px";
       knob.on("change", function (k) {
-        osc1_release = k.value;
+        synth.osc1.release = k.value;
       });
       knob.emit("change", knob);
 
@@ -3042,13 +2659,12 @@ $(function () {
         setting.classList = "setting";
         setting.style = "color: inherit; width: calc(100% - 2px);";
 
-        const keys = Object.keys(BASIC_PIANO_SCALES); // lol
         const option = document.createElement("option");
         option.value = option.innerText = "No highlighted notes";
         option.selected = !gHighlightScaleNotes;
         setting.appendChild(option);
 
-        for (const key of keys) {
+        for (const key in BASIC_PIANO_SCALES) {
           const option = document.createElement("option");
           option.value = key;
           option.innerText = key;

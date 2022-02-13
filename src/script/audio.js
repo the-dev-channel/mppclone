@@ -1,3 +1,58 @@
+import { MIDI_KEY_NAMES, MIDI_TRANSPOSE } from "./constants";
+
+class SynthVoice {
+  constructor(note_name, time, synth) {
+    let note_number = MIDI_KEY_NAMES.indexOf(note_name);
+    note_number = note_number + 9 - MIDI_TRANSPOSE;
+    let freq = Math.pow(2, (note_number - 69) / 12) * 440.0;
+
+    this.synth = synth;
+
+    this.osc = synth.context.createOscillator();
+    this.osc.type = synth.osc1.type;
+    this.osc.frequency.value = freq;
+
+    this.gain = synth.context.createGain();
+    this.gain.gain.value = 0;
+    this.osc.connect(this.gain);
+    this.gain.connect(synth.gain);
+
+    this.osc.start(time);
+    this.gain.gain.setValueAtTime(0, time);
+    this.gain.gain.linearRampToValueAtTime(1, time + synth.osc1.attack);
+    this.gain.gain.linearRampToValueAtTime(
+      synth.osc1.sustain,
+      time + synth.osc1.attack + synth.osc1.decay
+    );
+  }
+
+  stop(time) {
+    //this.gain.gain.setValueAtTime(osc1_sustain, time);
+    this.gain.gain.linearRampToValueAtTime(0, time + this.synth.osc1.release);
+    this.osc.stop(time + this.synth.osc1.release);
+  }
+}
+
+class Synth {
+  constructor(engine) {
+    this.engine = engine;
+    this.context = engine.context;
+    this.enable = false;
+
+    this.gain = this.context.createGain();
+    this.gain.gain.value = 0.05;
+    this.gain.connect(engine.synthGain);
+
+    this.osc1 = {
+      type: "square",
+      attack: 0,
+      decay: 0.2,
+      sustain: 0.5,
+      release: 2.0,
+    };
+  }
+}
+
 export class AudioEngine {
   init(cb) {
     this.volume = 0.6;
@@ -69,6 +124,8 @@ export class AudioEngineWeb extends AudioEngine {
 
     this.playings = {};
 
+    this.synth = new Synth(this);
+
     if (cb) setTimeout(cb, 0);
     return this;
   }
@@ -80,7 +137,7 @@ export class AudioEngineWeb extends AudioEngine {
     req.addEventListener("readystatechange", (evt) => {
       if (req.readyState !== 4) return;
       try {
-        this.context.decodeAudioData(req.response, buffer => {
+        this.context.decodeAudioData(req.response, (buffer) => {
           this.sounds[id] = buffer;
           if (cb) cb();
         });
@@ -122,14 +179,14 @@ export class AudioEngineWeb extends AudioEngine {
       playing.gain.gain.setValueAtTime(playing.gain.gain.value, time);
       playing.gain.gain.linearRampToValueAtTime(0.0, time + 0.2);
       playing.source.stop(time + 0.21);
-      if (enableSynth && playing.voice) {
+      if (this.synth.enable && playing.voice) {
         playing.voice.stop(time);
       }
     }
     this.playings[id] = { source, gain, part_id };
 
-    if (enableSynth) {
-      this.playings[id].voice = new SynthVoice(id, time);
+    if (this.synth.enable) {
+      this.playings[id].voice = new SynthVoice(id, time, this.synth);
     }
   }
 

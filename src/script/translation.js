@@ -88,8 +88,8 @@ function get(text, lang) {
   return string;
 }
 
-export default function translate(lang = language) {
-  lang = lang || language;
+export default function translate(lang) {
+  lang ||= language;
   $(".translate").each(function (i, ele) {
     let th = $(this);
     if (ele.tagName && ele.tagName.toLowerCase() == "input") {

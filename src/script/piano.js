@@ -3,11 +3,11 @@ import $ from "jquery";
 import { AudioEngineWeb } from "./audio";
 import { CanvasRenderer } from "./render";
 
+import { NOTES } from "./constants";
+
 const test_mode =
   window.location.hash &&
   window.location.hash.match(/^(?:#.+)*#test(?:#.+)*$/i);
-
-let gMidiOutTest;
 
 export class PianoKey {
   constructor(note, octave) {
@@ -52,10 +52,10 @@ export class Piano {
       addKey("a", -1);
       addKey("as", -1);
       addKey("b", -1);
-      var notes = "c cs d ds e f fs g gs a as b".split(" ");
-      for (var oct = 0; oct < 7; oct++) {
-        for (var i in notes) {
-          addKey(notes[i], oct);
+
+      for (let oct = 0; oct < 7; oct++) {
+        for (let note of NOTES) {
+          addKey(note, oct);
         }
       }
       addKey("c", 7);
@@ -67,18 +67,20 @@ export class Piano {
       this.renderer.resize();
     });
 
+    // This fixes a warning from Chromium. What the hell?
     window.AudioContext =
       window.AudioContext || window.webkitAudioContext || undefined;
-    var audio_engine = AudioEngineWeb;
-    this.audio = new audio_engine().init();
+
+    this.audio = new AudioEngineWeb().init();
+    this.midiOutTest = null;
   }
 
   play(note, vol, participant, delay_ms, lyric) {
     if (!this.keys.hasOwnProperty(note) || !participant) return;
     let key = this.keys[note];
     if (key.loaded) this.audio.play(key.note, vol, delay_ms, participant.id);
-    if (gMidiOutTest)
-      gMidiOutTest(key.note, vol * 100, delay_ms, participant.id);
+    if (this.midiOutTest)
+      this.midiOutTest(key.note, vol * 100, delay_ms, participant.id);
 
     setTimeout(() => {
       this.renderer.visualize(key, participant.color);
@@ -91,10 +93,12 @@ export class Piano {
       }, 30);
     }, delay_ms || 0);
   }
+
   stop(note, participant, delay_ms) {
     if (!this.keys.hasOwnProperty(note)) return;
     let key = this.keys[note];
     if (key.loaded) this.audio.stop(key.note, delay_ms, participant.id);
-    if (gMidiOutTest) gMidiOutTest(key.note, 0, delay_ms, participant.id);
+    if (this.midiOutTest)
+      this.midiOutTest(key.note, 0, delay_ms, participant.id);
   }
 }

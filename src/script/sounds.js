@@ -20,9 +20,9 @@ export default class SoundSelector {
   }
 
   _add(obj, load) {
-    var added = false;
-    for (var i = 0; this.packs.length > i; i++) {
-      if (obj.name == this.packs[i].name) {
+    let added = false;
+    for (let pack of this.packs) {
+      if (obj.name == pack.name) {
         added = true;
         break;
       }
@@ -31,7 +31,7 @@ export default class SoundSelector {
     if (added) return console.warn("Sounds already added!!"); //no adding soundpacks twice D:<
 
     if (obj.url.substr(obj.url.length - 1) != "/") obj.url = obj.url + "/";
-    var html = document.createElement("li");
+    let html = document.createElement("li");
     html.classList = "pack";
     html.innerText = obj.name + " (" + obj.keys.length + " keys)";
     html.onclick = () => {
@@ -98,15 +98,17 @@ export default class SoundSelector {
     this.loadPack(this.soundSelection, true);
   }
 
-  loadPack(pack, f) {
+  loadPack(name, f) {
+    let pack;
+
     for (let p of this.packs) {
-      if (p.name == pack) {
+      if (p.name == name) {
         pack = p;
         break;
       }
     }
 
-    if (typeof pack == "string") {
+    if (!pack) {
       console.warn("Sound pack does not exist! Loading default pack...");
       return this.loadPack("MPP Classic");
     }

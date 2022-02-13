@@ -1,4 +1,4 @@
-import { EventEmitter } from "./util";
+import { EventEmitter } from "ee-ts";
 
 export default class Client extends EventEmitter {
   constructor(uri) {
@@ -97,11 +97,11 @@ export default class Client extends EventEmitter {
       let ms = ms_lut[idx];
       setTimeout(this.connect.bind(this), ms);
     });
-    this.ws.addEventListener("error", err => {
+    this.ws.addEventListener("error", (err) => {
       this.emit("wserror", err);
       this.ws.close(); // this.ws.emit("close");
     });
-    this.ws.addEventListener("open", evt => {
+    this.ws.addEventListener("open", (evt) => {
       this.pingInterval = setInterval(() => {
         this.sendPing();
       }, 20000);
@@ -124,7 +124,7 @@ export default class Client extends EventEmitter {
       this.emit("connect");
       this.emit("status", "Joining channel...");
     });
-    this.ws.addEventListener("message", async evt => {
+    this.ws.addEventListener("message", async (evt) => {
       let transmission = JSON.parse(evt.data);
       for (let i = 0; i < transmission.length; i++) {
         let msg = transmission[i];
@@ -153,29 +153,29 @@ export default class Client extends EventEmitter {
         this.accountInfo = undefined;
       }
     });
-    this.on("t", msg => {
+    this.on("t", (msg) => {
       this.receiveServerTime(msg.t, msg.e || undefined);
     });
-    this.on("ch", msg => {
+    this.on("ch", (msg) => {
       this.desiredChannelId = msg.ch._id;
       this.desiredChannelSettings = msg.ch.settings;
       this.channel = msg.ch;
       if (msg.p) this.participantId = msg.p;
       this.setParticipants(msg.ppl);
     });
-    this.on("p", msg => {
+    this.on("p", (msg) => {
       this.participantUpdate(msg);
       this.emit("participant update", this.findParticipantById(msg.id));
     });
-    this.on("m", msg => {
+    this.on("m", (msg) => {
       if (this.ppl.hasOwnProperty(msg.id)) {
         this.participantMoveMouse(msg);
       }
     });
-    this.on("bye", msg => {
+    this.on("bye", (msg) => {
       this.removeParticipant(msg.p);
     });
-    this.on("b", msg => {
+    this.on("b", (msg) => {
       let hiMsg = { m: "hi" };
       hiMsg["🐈"] = this["🐈"]++ || undefined;
       if (this.loginInfo) hiMsg.login = this.loginInfo;

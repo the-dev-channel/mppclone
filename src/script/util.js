@@ -1,34 +1,10 @@
+import { EventEmitter } from "ee-ts";
+
 export function mixin(obj1, obj2) {
   for (var i in obj2) {
     if (obj2.hasOwnProperty(i)) {
       obj1[i] = obj2[i];
     }
-  }
-}
-
-export class EventEmitter {
-  constructor() {
-    this._events = {};
-  }
-
-  on(evtn, fn) {
-    if (!this._events.hasOwnProperty(evtn)) this._events[evtn] = [];
-    this._events[evtn].push(fn);
-  }
-
-  off(evtn, fn) {
-    if (!this._events.hasOwnProperty(evtn)) return;
-    let idx = this._events[evtn].indexOf(fn);
-    if (idx < 0) return;
-    this._events[evtn].splice(idx, 1);
-  }
-
-  emit(evtn, ...args) {
-    if (!this._events.hasOwnProperty(evtn)) return;
-    let fns = this._events[evtn].slice(0);
-    if (fns.length < 1) return;
-
-    for (let fn of fns) fn.apply(this, args);
   }
 }
 

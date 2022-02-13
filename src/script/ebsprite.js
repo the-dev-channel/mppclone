@@ -2647,7 +2647,7 @@ var spriteData = [
   },
 ];
 
-function ebsprite() {}
+var ebsprite = {};
 
 ebsprite.start = function (client) {
   if (this.run) return;

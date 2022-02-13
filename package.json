@@ -6,8 +6,8 @@
   "license": "GPL-3.0-only",
   "source": "src/index.html",
   "scripts": {
-    "start": "parcel",
-    "build": "parcel build"
+    "start": "parcel --log-level info",
+    "build": "parcel build --log-level info"
   },
   "devDependencies": {
     "parcel": "^2.2.1",
@@ -15,8 +15,10 @@
     "prettier": "2.5.1"
   },
   "dependencies": {
+    "ee-ts": "^1.0.2",
     "jquery": "^3.6.0",
     "lamejs": "^1.2.1",
+    "object-assign": "^4.1.1",
     "raf": "^3.4.1"
   }
 }
