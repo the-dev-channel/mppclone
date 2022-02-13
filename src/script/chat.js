@@ -11,7 +11,7 @@ export default class ChatFacade {
       msg.ch.settings.chat ? this.show() : this.hide()
     );
     client.on("a", (msg) => this.receive(msg));
-    client.on("dm", (msg) => chat.receive(msg));
+    client.on("dm", (msg) => this.receive(msg));
 
     client.on("c", (msg) => {
       this.clear();
