@@ -145,10 +145,10 @@ export default class ChatFacade {
     if (gShowTimestampsInChat) li.append('<span class="timestamp"/>');
 
     if (msg.m === "dm") {
-      if (msg.sender._id === gClient.user._id) {
+      if (msg.sender._id === this.client.user._id) {
         //sent dm
         li.append('<span class="sentDm"/>');
-      } else if (msg.recipient._id === gClient.user._id) {
+      } else if (msg.recipient._id === this.client.user._id) {
         //received dm
         li.append('<span class="receivedDm"/>');
       } else {
@@ -173,11 +173,11 @@ export default class ChatFacade {
 
     //prefix before dms so people know it's a dm
     if (msg.m === "dm") {
-      if (msg.sender._id === gClient.user._id) {
+      if (msg.sender._id === this.client.user._id) {
         //sent dm
         li.find(".sentDm").text("To");
         li.find(".sentDm").css("color", "#ff55ff");
-      } else if (msg.recipient._id === gClient.user._id) {
+      } else if (msg.recipient._id === this.client.user._id) {
         //received dm
         li.find(".receivedDm").text("From");
         li.find(".receivedDm").css("color", "#ff55ff");
@@ -231,13 +231,13 @@ export default class ChatFacade {
         }
       }
 
-      if (msg.sender._id === gClient.user._id) {
+      if (msg.sender._id === this.client.user._id) {
         //sent dm
         if (!gNoChatColors)
           li.find(".name").css("color", msg.recipient.color || "white");
         li.find(".name").text(msg.recipient.name + ":");
         if (gShowChatTooltips) li[0].title = msg.recipient._id;
-      } else if (msg.recipient._id === gClient.user._id) {
+      } else if (msg.recipient._id === this.client.user._id) {
         //received dm
         if (!gNoChatColors)
           li.find(".name").css("color", msg.sender.color || "white");
